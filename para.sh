@@ -1,6 +1,25 @@
 #!/bin/bash
 
-workspaces=$(wmctrl -d | awk '{print $NF}' | sed ':a;N;$!ba;s/\n/ \/ /g')
+command -v wmctrl >/dev/null 2>&1 || exit 1
 
-notify-send "wmctrl says" "$workspaces"
-# herbe "wmctrl says $workspaces"
+workspaces=$(
+   wmctrl -d | awk '
+       {
+           name = $NF
+           if (name == "-" || name == "") name = "ws" $1
+           if ($2 == "*") name = "[" name "]"
+           printf "%s%s", sep, name
+           sep = " / "
+       }
+   '
+)
+
+[ -z "$workspaces" ] && exit 1
+
+if command -v notify-send >/dev/null 2>&1; then
+   notify-send "Workspaces" "$workspaces"
+elif command -v herbe >/dev/null 2>&1; then
+   herbe "Workspaces: $workspaces"
+else
+   printf '%s\n' "$workspaces"
+fi
